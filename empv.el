@@ -402,6 +402,12 @@ This function also tries to disable sorting in `completing-read' function."
        (ignore item)
        ,@forms))))
 
+(defun empv--set-volume (vol)
+  "Set the `volume' property in mpv"
+  (let ((vol (max 0 (min vol 100))))
+    (message "Volume: %d" vol)
+    (empv--cmd 'set_property `(volume ,vol))))
+
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Interactive - Basics
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -468,27 +474,23 @@ see `empv-base-directory'."
   (empv--cmd 'set_property '(loop-file no)))
 
 ;;;###autoload
-(defun empv-volume-up ()
-  "Up the volume to a max of 100%"
+(defun empv-change-vol (arg)
+  "Change the volume by ARG"
   (interactive)
-  (empv--cmd 'get_property 'volume
-	     (empv--cmd 'set_property `(volume ,(min (+ it 5) 100)))))
+  (empv--cmd 'get_property 'volume (empv--set-volume (+ it arg))))
 
 ;;;###autoload
-(defun empv-volume-down ()
-  "Down the volume to a min of 0%"
-  (interactive)
-  (empv--cmd 'get_property 'volume
-	     (empv--cmd 'set_property `(volume ,(max (- it 5) 0)))))
+(defun empv-set-volume (arg)
+  "Set the volume interactivly.
 
-(defun empv-set-volume ()
-  "Set the exact volume."
-  (interactive)
+Set volume to ARG if NON-nil. Otherwise ask for the value"
+  (interactive "P")
   (empv--cmd
    'get_property 'volume
-   (let* ((current (string-trim-right (number-to-string it) ".0"))
-          (in (read-string (format "Volume (0-100, current %s): " current))))
-     (empv--cmd 'set_property `(volume ,in)))))
+   (empv--set-volume
+    (or arg
+	(string-to-number
+	 (read-string (format "Volume (0-100, current %d): " it)))))))
 
 ;;;###autoload
 (defun empv-toggle-video ()
